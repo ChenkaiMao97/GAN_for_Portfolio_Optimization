@@ -62,7 +62,7 @@ plt.legend(['train_G_loss', 'train_D_loss', 'test_G_loss', 'test_D_loss'])
 plt.savefig("learning.png")
 
 
-trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight, test=True)
+trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight)
 checkpoint = torch.load("./models/last_model.pt")
 trainer.netG = checkpoint['model_G']
 trainer.netD = checkpoint['model_D']

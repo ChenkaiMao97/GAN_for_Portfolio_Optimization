@@ -46,7 +46,7 @@ optimizer_D = torch.optim.Adam(disc.parameters(), lr=lr, betas=betas)
 lr_scheduler_G = torch.optim.lr_scheduler.ExponentialLR(optimizer_G, lr_exp_decay)
 lr_scheduler_D = torch.optim.lr_scheduler.ExponentialLR(optimizer_D, lr_exp_decay)
 train_file = "test.npy"
-trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight)
+trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight, test=True)
 
 checkpoint = torch.load("./models/last_model.pt")
 trainer.netG = checkpoint['model_G']
