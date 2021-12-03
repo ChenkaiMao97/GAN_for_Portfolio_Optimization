@@ -65,4 +65,7 @@ for i, sample_batched in enumerate(trainer.train_loader):
     if i==0:
       break
 
+np.store("porfolio_data/fake_batches.npy", fake_batches.numpy())
+np.store("porfolio_data/real_batches.npy", real_batch.numpy())
+
 
