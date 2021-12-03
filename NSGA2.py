@@ -6,6 +6,7 @@
 #Importing required modules
 import math
 import random
+import numpy as np
 import matplotlib.pyplot as plt
 
 N = 0
@@ -13,32 +14,40 @@ num_stocks = 22
 b = 40
 f = 20
 
-fake_batches = np.load("portfolio_data/fake_batches.npy", fake_batches.numpy())[:,0]
-real_batch = np.load("portfolio_data/real_batches.npy", real_batch.numpy())[0]
-scales = np.load("portfolio_data/scales.npy", scales.numpy())[0]
+fake_batches = np.load("portfolio_data/fake_batches.npy")[0]
+real_batch = np.load("portfolio_data/real_batches.npy")[0]
+scales = np.load("portfolio_data/scales.npy")[0]
 
 print("shapes:", fake_batches.shape, real_batch.shape, scales.shape)
 buy_in_prices = (real_batch[:,b-1] + 1)/2 * (scales[:,1]-scales[:,0]) + scales[:,0]
 end_prices = (fake_batches[:,:,-1] + 1 )/2 * (scales[:,1]-scales[:,0]) + scales[:,0]
-
+print("buy_in_prices: ", buy_in_prices)
 #First function to optimize
 def function1(x):
-    print(f"x.shape: {x.shape}, buy_in_prices.shape: {buy_in_prices.shape}")
-    cost = buy_in_prices*x
+    cost = np.sum(buy_in_prices*x)
     mean_end_price = np.mean(end_prices, axis=0)
 
-    value = np.dot(x,mean_end_price)
+    if abs(cost) < 1e-3:
+        print("cost: ", cost, buy_in_prices, x)
 
-    return (value - cost) / cost
+    value = np.dot(x,mean_end_price)
+    f1 = (value-cost)/cost
+    #print("f1:", f1)
+    return f1
 
 #Second function to optimize
 def function2(x):
-    cost = buy_in_prices*x
+    cost = np.sum(buy_in_prices*x)
 
     x = x.reshape(1,x.shape[0])
     value = np.var(np.sum(x*end_prices, axis=1))
+    
+    if abs(cost) < 1e-3:
+        print("cost: ", cost, buy_in_prices, x)
 
-    return -value/cost/cost
+    f2 = -value/cost/cost
+    #print("f2: ", f2)
+    return f2
 
 #Function to find index of list
 def index_of(a,list):
@@ -126,18 +135,18 @@ pop_size = 20
 max_gen = 921
 
 #Initialization
-min_x=np.zeros(num_stocks)
+min_x=np.ones(num_stocks)*1e-3
 max_x=np.ones(num_stocks)
-solution=[min_x+(max_x-min_x)*random.random() for i in range(0,pop_size)]
+solution=[min_x+(max_x-min_x)*np.random.rand(num_stocks) for i in range(0,pop_size)]
 gen_no=0
 while(gen_no<max_gen):
     function1_values = [function1(solution[i])for i in range(0,pop_size)]
     function2_values = [function2(solution[i])for i in range(0,pop_size)]
     non_dominated_sorted_solution = fast_non_dominated_sort(function1_values[:],function2_values[:])
-    print("The best front for Generation number ",gen_no, " is")
-    for valuez in non_dominated_sorted_solution[0]:
-        print(round(solution[valuez],3),end=" ")
-    print("\n")
+    #print("The best front for Generation number ",gen_no, " is")
+    #for valuez in non_dominated_sorted_solution[0]:
+    #    print(np.round(solution[valuez],3),end=" ")
+    #print("\n")
     crowding_distance_values=[]
     for i in range(0,len(non_dominated_sorted_solution)):
         crowding_distance_values.append(crowding_distance(function1_values[:],function2_values[:],non_dominated_sorted_solution[i][:]))
@@ -174,4 +183,4 @@ function2 = [j * -1 for j in function2_values]
 plt.xlabel('Function 1', fontsize=15)
 plt.ylabel('Function 2', fontsize=15)
 plt.scatter(function1, function2)
-plt.show()
+plt.savefig("optimized.png")

@@ -37,7 +37,7 @@ class PriceDataset(Dataset):
         A = self.A[idx, :, :]
 
         if self.test:
-            scales = self.prices[:, :, -2:]
+            scales = self.scales[idx, :, :]
             sample = {'x': x, 'y': y, 'A': A, 'scales': scales}
         else:
             sample = {'x': x, 'y': y, 'A': A}
