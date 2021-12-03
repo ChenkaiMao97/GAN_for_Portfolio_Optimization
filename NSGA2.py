@@ -8,15 +8,37 @@ import math
 import random
 import matplotlib.pyplot as plt
 
+N = 0
+num_stocks = 22
+b = 40
+f = 20
+
+fake_batches = np.load("portfolio_data/fake_batches.npy", fake_batches.numpy())[:,0]
+real_batch = np.load("portfolio_data/real_batches.npy", real_batch.numpy())[0]
+scales = np.load("portfolio_data/scales.npy", scales.numpy())[0]
+
+print("shapes:", fake_batches.shape, real_batch.shape, scales.shape)
+buy_in_prices = (real_batch[:,b-1] + 1)/2 * (scales[:,1]-scales[:,0]) + scales[:,0]
+end_prices = (fake_batches[:,:,-1] + 1 )/2 * (scales[:,1]-scales[:,0]) + scales[:,0]
+
 #First function to optimize
 def function1(x):
-    value = -x**2
-    return value
+    print(f"x.shape: {x.shape}, buy_in_prices.shape: {buy_in_prices.shape}")
+    cost = buy_in_prices*x
+    mean_end_price = np.mean(end_prices, axis=0)
+
+    value = np.dot(x,mean_end_price)
+
+    return (value - cost) / cost
 
 #Second function to optimize
 def function2(x):
-    value = -(x-2)**2
-    return value
+    cost = buy_in_prices*x
+
+    x = x.reshape(1,x.shape[0])
+    value = np.var(np.sum(x*end_prices, axis=1))
+
+    return -value/cost/cost
 
 #Function to find index of list
 def index_of(a,list):
@@ -95,8 +117,8 @@ def crossover(a,b):
 #Function to carry out the mutation operator
 def mutation(solution):
     mutation_prob = random.random()
-    if mutation_prob <1:
-        solution = min_x+(max_x-min_x)*random.random()
+    if mutation_prob <0.5:
+        solution = min_x+(max_x-min_x)*np.random.rand(num_stocks)
     return solution
 
 #Main program starts here
@@ -104,8 +126,8 @@ pop_size = 20
 max_gen = 921
 
 #Initialization
-min_x=-55
-max_x=55
+min_x=np.zeros(num_stocks)
+max_x=np.ones(num_stocks)
 solution=[min_x+(max_x-min_x)*random.random() for i in range(0,pop_size)]
 gen_no=0
 while(gen_no<max_gen):
