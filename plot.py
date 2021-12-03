@@ -4,10 +4,20 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
+stocks = ["TMUS", "DIS", #Communication Services
+          "AMZN", "TSLA", #Consumer Discretionary
+          "KO", "WMT", #Consumer Staples
+          "XOM", "CVX", #Energy
+          "JPM", "BAC", #financial
+          "JNJ", "PFE", #healthcare
+          "UPS", "BA", #Industrials
+          "AAPL", "MSFT", #Information Technology
+          "LIN", "APD", #Materials
+          "AMT", "PLD", #Real Estate
+          "NEE", "DUK" #Utilities
+          ]
 
-stocks = ["AAPL", "TSLA", "GOOG", "IBM", "FB", "ZM", "AMC", "AMD", "PFE", "GM", "NVDA", "CVX", "CELG", "XOM", "AMZN"]
-
-num_stocks = 15
+num_stocks = len(stocks)
 b = 40
 f = 20
 k_s = 3
@@ -33,7 +43,7 @@ optimizer_D = torch.optim.Adam(disc.parameters(), lr=lr, betas=betas)
 
 lr_scheduler_G = torch.optim.lr_scheduler.ExponentialLR(optimizer_G, lr_exp_decay)
 lr_scheduler_D = torch.optim.lr_scheduler.ExponentialLR(optimizer_D, lr_exp_decay)
-train_file = "data1.npy"
+train_file = "train.npy"
 trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight)
     
 

@@ -348,7 +348,7 @@ class Train():
 
 
 if __name__ == '__main__':
-    num_stocks = 15
+    num_stocks = 22
     b = 40
     f = 20
     k_s = 3
@@ -396,7 +396,7 @@ if __name__ == '__main__':
 
     lr_scheduler_G = torch.optim.lr_scheduler.ExponentialLR(optimizer_G, lr_exp_decay)
     lr_scheduler_D = torch.optim.lr_scheduler.ExponentialLR(optimizer_D, lr_exp_decay)
-    train_file = "data1.npy"
+    train_file = "train.npy"
     trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight)
     df = trainer.train_model(epochs=epoch)
 
