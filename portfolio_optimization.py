@@ -17,6 +17,8 @@ stocks = ["TMUS", "DIS", #Communication Services
           "NEE", "DUK" #Utilities
           ]
 
+num_simulations = 10
+
 num_stocks = len(stocks)
 b = 40
 f = 20
@@ -43,54 +45,24 @@ optimizer_D = torch.optim.Adam(disc.parameters(), lr=lr, betas=betas)
 
 lr_scheduler_G = torch.optim.lr_scheduler.ExponentialLR(optimizer_G, lr_exp_decay)
 lr_scheduler_D = torch.optim.lr_scheduler.ExponentialLR(optimizer_D, lr_exp_decay)
-train_file = "train.npy"
+train_file = "test.npy"
 trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight)
-    
 
-# train_result = df.to_numpy()
-df = pd.read_csv('./'+'df.csv')
-plt.figure(figsize=(7,7))
-plt.plot(df['epoch'], df['train_G_loss'])
-plt.plot(df['epoch'], df['train_D_loss'])
-plt.plot(df['epoch'], df['test_G_loss'])
-plt.plot(df['epoch'], df['test_D_loss'])
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.title("Training Curve")
-
-plt.legend(['train_G_loss', 'train_D_loss', 'test_G_loss', 'test_D_loss'])
-plt.savefig("learning.png")
-
-
-trainer = Train(gen,disc, batch_size, optimizer_G,optimizer_D,lr_scheduler_G,lr_scheduler_D, train_file, cuda=cuda, gp_weight=gp_weight, test=True)
 checkpoint = torch.load("./models/last_model.pt")
 trainer.netG = checkpoint['model_G']
 trainer.netD = checkpoint['model_D']
 
-num_fake_batch = 10
+num_fake_batch = num_simulations
 for i, sample_batched in enumerate(trainer.train_loader):
-    x, y, A= sample_batched['x'].to(trainer.device), sample_batched['y'].to(trainer.device), sample_batched['A'].to(trainer.device)
+    x, y, A, scales= sample_batched['x'].to(trainer.device), sample_batched['y'].to(trainer.device), sample_batched['A'].to(trainer.device), sample_batched['scales'].to(trainer.device)
     fake_batches = []
     for z in range(num_fake_batch):
         Mf = trainer.gen_fake(x, A)
+        print("Mf.shape", Mf.shape)
         fake_batches.append(torch.cat((x, Mf), dim=2).to(trainer.device))
     real_batch = torch.cat((x, y), dim=2).to(trainer.device)
 
     if i==0:
       break
 
-num_days = 2
-num_stocks = 4
-fig, axs = plt.subplots(num_days,num_stocks, figsize=(10,5))
 
-for i in range(num_days):
-	for j in range(num_stocks):
-		axs[i,j].plot(list(range(real_batch.shape[-1])), real_batch.cpu()[i,j,:], linewidth=2)
-		for k in range(num_fake_batch):
-			axs[i,j].plot(list(range(real_batch.shape[-1])), fake_batches[k].detach().cpu()[i,j,:], linewidth=.5)
-		axs[i,j].set_xlabel("date")
-		axs[i,j].set_ylabel("Normalized Price")
-		axs[i,j].set_title(stocks[j])
-
-plt.tight_layout()
-fig.savefig("price_prediction.png", dpi=1000)

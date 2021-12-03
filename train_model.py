@@ -7,10 +7,11 @@ from torch.utils.data import random_split, Dataset, DataLoader
 # from torch.utils.data import Dataset, DataLoader
 
 class PriceDataset(Dataset):
-    def __init__(self, filename, b=40, f=20, total_sample_number=None):
+    def __init__(self, filename, b=40, f=20, total_sample_number=None, test=False):
 
         self.prices = np.load('./data/'+filename, allow_pickle=True).astype(np.float32)
-        
+        self.test = test
+
         if total_sample_number:
             random.seed(1234)
             indices = random.sample(list(range(self.prices.shape[0])), total_sample_number)
@@ -18,7 +19,11 @@ class PriceDataset(Dataset):
 
         self.x = self.prices[:, :, :b]
         self.y = self.prices[:, :, b:b+f]
-        self.A = self.prices[:, :, -1:]
+        if not self.test:
+            self.A = self.prices[:, :, -1:]
+        else:
+            self.A = self.prices[:, :, -3:-2]
+            self.scales = self.prices[:, :, -2:]
 
     def __len__(self):
         return self.prices.shape[0]
@@ -30,9 +35,12 @@ class PriceDataset(Dataset):
         x = self.x[idx, :, :]
         y = self.y[idx, :, :]
         A = self.A[idx, :, :]
-        # print("!:", x, y, A)
-        
-        sample = {'x': x, 'y': y, 'A': A}
+
+        if self.test:
+            scales = self.prices[:, :, -2:]
+            sample = {'x': x, 'y': y, 'A': A, 'scales': scales}
+        else:
+            sample = {'x': x, 'y': y, 'A': A}
 
         return sample
 
@@ -168,7 +176,7 @@ def weights_init(m):
 # from torch.utils.data import random_split, DataLoader
 
 class Train():
-    def __init__(self, generator, discriminator, batch_size, optimizer_G, optimizer_D, lr_scheduler_G, lr_scheduler_D, train_file, cuda, gp_weight=10, critic_iter=5):
+    def __init__(self, generator, discriminator, batch_size, optimizer_G, optimizer_D, lr_scheduler_G, lr_scheduler_D, train_file, cuda, gp_weight=10, critic_iter=5, test=False):
         self.netG = generator
         self.netD = discriminator
         self.batch_size = batch_size
@@ -185,7 +193,7 @@ class Train():
         self.losses = {'G': [],'D': [], 'GP': []}
         self.train_file = train_file
 
-        ds = PriceDataset(train_file)
+        ds = PriceDataset(train_file, test=test)
         torch.manual_seed(42)
         train_ds, test_ds = random_split(ds, [int(0.9*len(ds)), len(ds) - int(0.9*len(ds))])
         
