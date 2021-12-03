@@ -2,10 +2,22 @@ import numpy as np
 import cvxopt as opt
 from cvxopt import blas, solvers
 import matplotlib.pyplot as plt
-# n_assets = 4
-k = 15
-n_obs = 40
-returns = np.random.randn(k, n_obs)
+# # n_assets = 4
+# k = 15
+# n_obs = 40
+# returns = np.random.randn(k, n_obs)
+
+N = 0
+num_stocks = 22
+b = 40
+f = 20
+
+fake_batches = np.load("portfolio_data/fake_batches.npy")[0]
+real_batch = np.load("portfolio_data/real_batches.npy")[0]
+scales = np.load("portfolio_data/scales.npy")[0]
+
+returns = real_batch[:,1:b+1]/real_batch[:,:b] -1
+returns = returns.astype(np.double)
 
 def get_mu_sigma(returns, rmax=1.15, Z=25):
     n = len(returns)
@@ -13,11 +25,14 @@ def get_mu_sigma(returns, rmax=1.15, Z=25):
 
     N = 100
     #desired returns
-    mus = [10 ** (2.0 * t / N - 1.0) for t in range(25)]
+    mus = [2 ** (2 * t / N - 1.0) for t in range(25)]
     # mus = np.array([1] + [1 + (t - 1)*(rmax - 1)/(Z-1) for t in range(2, 25)]) -1
     # Convert to cvxopt matrices
     S = opt.matrix(np.cov(returns))
     pbar = opt.matrix(np.mean(returns, axis=1))
+
+    print("S:", S)
+    print("pbar:", pbar)
 
     # Create constraint matrices
     G = -opt.matrix(np.eye(n))  # negative n x n identity matrix
@@ -36,10 +51,14 @@ def get_mu_sigma(returns, rmax=1.15, Z=25):
     x1 = np.sqrt(m1[2] / m1[0])
     # CALCULATE THE OPTIMAL PORTFOLIO
     wt = solvers.qp(opt.matrix(x1 * S), -pbar, G, h, A, b)['x']
-    return np.asarray(wt), returns, risks
+    # return np.asarray(wt), returns, risks
+    return portfolios, returns, risks
 
 
 weights, returns, risks = get_mu_sigma(returns)
+print(len(weights))
+np.save("M_portfolio.npy", np.stack(weights))
+np.save("risks.npy", np.stack(risks))
 
 fig = plt.figure()
 plt.plot(risks, returns)

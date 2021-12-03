@@ -21,6 +21,7 @@ scales = np.load("portfolio_data/scales.npy")[0]
 print("shapes:", fake_batches.shape, real_batch.shape, scales.shape)
 buy_in_prices = (real_batch[:,b-1] + 1)/2 * (scales[:,1]-scales[:,0]) + scales[:,0]
 end_prices = (fake_batches[:,:,-1] + 1 )/2 * (scales[:,1]-scales[:,0]) + scales[:,0]
+real_end_prices = (real_batch[:,-1] + 1 )/2 * (scales[:,1]-scales[:,0]) + scales[:,0]
 print("buy_in_prices: ", buy_in_prices)
 #First function to optimize
 def function1(x):
@@ -30,9 +31,9 @@ def function1(x):
     if abs(cost) < 1e-3:
         print("cost: ", cost, buy_in_prices, x)
 
-    value = np.dot(x,mean_end_price)
+    value = np.sum(x*mean_end_price)
     f1 = (value-cost)/cost
-    #print("f1:", f1)
+    # print("f1:", f1)
     return f1
 
 #Second function to optimize
@@ -46,8 +47,14 @@ def function2(x):
         print("cost: ", cost, buy_in_prices, x)
 
     f2 = -value/cost/cost
-    #print("f2: ", f2)
+    # print("f2: ", f2)
     return f2
+
+def real_return(x):
+    cost = np.sum(buy_in_prices*x)
+    value = np.sum(real_end_prices*x)
+
+    return (value-cost)/cost
 
 #Function to find index of list
 def index_of(a,list):
@@ -118,10 +125,7 @@ def crowding_distance(values1, values2, front):
 #Function to carry out the crossover
 def crossover(a,b):
     r=random.random()
-    if r>0.5:
-        return mutation((a+b)/2)
-    else:
-        return mutation((a-b)/2)
+    return mutation((a+b)/2)
 
 #Function to carry out the mutation operator
 def mutation(solution):
@@ -131,15 +135,16 @@ def mutation(solution):
     return solution
 
 #Main program starts here
-pop_size = 20
-max_gen = 921
+pop_size = 100
+max_gen = 100
 
 #Initialization
-min_x=np.ones(num_stocks)*1e-3
+min_x=np.zeros(num_stocks)
 max_x=np.ones(num_stocks)
 solution=[min_x+(max_x-min_x)*np.random.rand(num_stocks) for i in range(0,pop_size)]
 gen_no=0
 while(gen_no<max_gen):
+    print("geneartion: ", gen_no)
     function1_values = [function1(solution[i])for i in range(0,pop_size)]
     function2_values = [function2(solution[i])for i in range(0,pop_size)]
     non_dominated_sorted_solution = fast_non_dominated_sort(function1_values[:],function2_values[:])
@@ -153,8 +158,9 @@ while(gen_no<max_gen):
     solution2 = solution[:]
     #Generating offsprings
     while(len(solution2)!=2*pop_size):
-        a1 = random.randint(0,pop_size-1)
-        b1 = random.randint(0,pop_size-1)
+        ab = random.sample(list(range(pop_size)),2)
+        a1 = ab[0]
+        b1 = ab[1]
         solution2.append(crossover(solution[a1],solution[b1]))
     function1_values2 = [function1(solution2[i])for i in range(0,2*pop_size)]
     function2_values2 = [function2(solution2[i])for i in range(0,2*pop_size)]
@@ -177,10 +183,22 @@ while(gen_no<max_gen):
     solution = [solution2[i] for i in new_solution]
     gen_no = gen_no + 1
 
+
 #Lets plot the final front now
-function1 = [i * -1 for i in function1_values]
-function2 = [j * -1 for j in function2_values]
+plt.figure()
+f1_value = [i for i in function1_values]
+f2_value = [j for j in function2_values]
 plt.xlabel('Function 1', fontsize=15)
 plt.ylabel('Function 2', fontsize=15)
-plt.scatter(function1, function2)
+plt.scatter(f1_value, f2_value)
 plt.savefig("optimized.png")
+
+plt.figure()
+risk = [function2(i) for i in solution]
+true_return = [real_return(i) for i in solution]
+plt.scatter(risk, true_return)
+plt.savefig("risk_return.png")
+
+
+
+
