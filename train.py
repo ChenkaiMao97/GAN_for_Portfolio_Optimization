@@ -15,6 +15,8 @@ class Train():
     def train_model(self, epochs):
         for epoch in range(epochs):
             for i in range(self.critic_iter):
+                fake_batch, real_batch = self.get_sample()
+                if self.cuda:
 
     def compute_gradient(self, real_data, fake_data):
         """Calculates the gradient penalty loss for WGAN GP"""
