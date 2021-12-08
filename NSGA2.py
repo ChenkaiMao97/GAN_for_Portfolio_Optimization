@@ -38,6 +38,7 @@ def function1(x):
 
 #Second function to optimize
 def function2(x):
+    x = x/np.mean(x)
     cost = np.sum(buy_in_prices*x)
 
     x = x.reshape(1,x.shape[0])
@@ -46,7 +47,7 @@ def function2(x):
     if abs(cost) < 1e-3:
         print("cost: ", cost, buy_in_prices, x)
 
-    f2 = -value/cost/cost
+    f2 = -value
     # print("f2: ", f2)
     return f2
 
@@ -145,8 +146,8 @@ solution=[min_x+(max_x-min_x)*np.random.rand(num_stocks) for i in range(0,pop_si
 gen_no=0
 while(gen_no<max_gen):
     print("geneartion: ", gen_no)
-    function1_values = [function1(solution[i])for i in range(0,pop_size)]
-    function2_values = [function2(solution[i])for i in range(0,pop_size)]
+    function1_values = [function1(solution[i]/np.sum(solution[i])) for i in range(0,pop_size)]
+    function2_values = [function2(solution[i]/np.sum(solution[i])) for i in range(0,pop_size)]
     non_dominated_sorted_solution = fast_non_dominated_sort(function1_values[:],function2_values[:])
     #print("The best front for Generation number ",gen_no, " is")
     #for valuez in non_dominated_sorted_solution[0]:
@@ -187,16 +188,18 @@ while(gen_no<max_gen):
 #Lets plot the final front now
 plt.figure()
 f1_value = [i for i in function1_values]
-f2_value = [j for j in function2_values]
-plt.xlabel('Function 1', fontsize=15)
-plt.ylabel('Function 2', fontsize=15)
-plt.scatter(f1_value, f2_value)
+f2_value = [-j for j in function2_values]
+plt.xlabel('risk', fontsize=15)
+plt.ylabel('return', fontsize=15)
+plt.scatter(f2_value, f1_value)
 plt.savefig("optimized.png")
 
 plt.figure()
-risk = [function2(i) for i in solution]
+risk = [-function2(i) for i in solution]
 true_return = [real_return(i) for i in solution]
 plt.scatter(risk, true_return)
+plt.xlabel("risk")
+plt.ylabel("real return")
 plt.savefig("risk_return.png")
 
 
