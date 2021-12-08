@@ -12,7 +12,7 @@ num_stocks = 22
 b = 40
 f = 20
 
-fake_batches = np.load("portfolio_data/fake_batches.npy")[0]
+fake_batches = np.load("portfolio_data/fake_batches.npy")[:,0]
 real_batch = np.load("portfolio_data/real_batches.npy")[0]
 scales = np.load("portfolio_data/scales.npy")[0]
 
@@ -25,10 +25,11 @@ def get_mu_sigma(returns, rmax=1.15, Z=25):
 
     N = 100
     #desired returns
-    mus = [2 ** (2 * t / N - 1.0) for t in range(25)]
+    mus = [10**(3 * t/N - 1.0) for t in range(N)]
+
     # mus = np.array([1] + [1 + (t - 1)*(rmax - 1)/(Z-1) for t in range(2, 25)]) -1
     # Convert to cvxopt matrices
-    S = opt.matrix(np.cov(returns))
+    S = opt.matrix(np.cov(returns)*20)
     pbar = opt.matrix(np.mean(returns, axis=1))
 
     print("S:", S)
@@ -46,6 +47,8 @@ def get_mu_sigma(returns, rmax=1.15, Z=25):
     ## CALCULATE RISKS AND RETURNS FOR FRONTIER
     returns = [blas.dot(pbar, x) for x in portfolios]
     risks = [np.sqrt(blas.dot(x, S * x)) for x in portfolios]
+    np.save("Mkreturns.npy", returns)
+    np.save("Mkrisks.npy", risks)
     ## CALCULATE THE 2ND DEGREE POLYNOMIAL OF THE FRONTIER CURVE
     m1 = np.polyfit(returns, risks, 2)
     x1 = np.sqrt(m1[2] / m1[0])
