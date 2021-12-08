@@ -19,7 +19,7 @@ scales = np.load("portfolio_data/scales.npy")[0]
 returns = real_batch[:,1:b+1]/real_batch[:,:b] -1
 returns = returns.astype(np.double)
 
-def get_mu_sigma(returns, rmax=1.15, Z=25):
+def get_mu_sigma(returns):
     n = len(returns)
     returns = np.asmatrix(returns)
 
@@ -29,7 +29,7 @@ def get_mu_sigma(returns, rmax=1.15, Z=25):
 
     # mus = np.array([1] + [1 + (t - 1)*(rmax - 1)/(Z-1) for t in range(2, 25)]) -1
     # Convert to cvxopt matrices
-    S = opt.matrix(np.cov(returns)*20)
+    S = opt.matrix(np.cov(returns)*40)
     pbar = opt.matrix(np.mean(returns, axis=1))
 
     print("S:", S)
